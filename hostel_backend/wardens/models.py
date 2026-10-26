@@ -1,0 +1,15 @@
+from django.conf import settings
+from django.db import models
+
+from hostels.models import Hostel
+
+
+class Warden(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='warden_profile'
+    )
+    hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE, related_name='wardens')
+    assigned_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} — {self.hostel.name}"
