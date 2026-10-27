@@ -1,31 +1,19 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../config.dart';
-
 class ApiException implements Exception {
   final String message;
-
   ApiException(this.message);
-
   @override
   String toString() => message;
 }
-
-
 class ApiService {
   static const _kAccess = 'access_token';
   static const _kRefresh = 'refresh_token';
   static const _kRole = 'role';
   static const _kUsername = 'username';
   static const _kUserId = 'user_id';
-
-
-  // ============================================================
-  // SESSION
-  // ============================================================
 
   static Future<void> _saveSession(
       Map<String, dynamic> data) async {

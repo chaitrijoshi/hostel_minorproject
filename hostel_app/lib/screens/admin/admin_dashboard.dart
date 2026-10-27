@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_drawer.dart';
 import 'hostels_tab.dart';
 import 'wardens_tab.dart';
+import '../../widgets/request_reports.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -9,7 +10,7 @@ class AdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Super Admin'),
@@ -17,6 +18,10 @@ class AdminDashboard extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.apartment), text: 'Hostels'),
               Tab(icon: Icon(Icons.shield_outlined), text: 'Wardens'),
+              Tab(
+  icon: Icon(Icons.assessment_outlined),
+  text: 'Reports',
+),
             ],
           ),
         ),
@@ -25,6 +30,7 @@ class AdminDashboard extends StatelessWidget {
           children: [
             HostelsTab(),
             WardensTab(),
+            RequestReports(),
           ],
         ),
       ),

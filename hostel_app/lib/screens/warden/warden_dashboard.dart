@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/entry_exit_list.dart';
 import '../../widgets/visitor_list.dart';
 import 'students_tab.dart';
 import 'guards_tab.dart';
+import '../../widgets/request_reports.dart';
 
 class WardenDashboard extends StatelessWidget {
   const WardenDashboard({super.key});
@@ -20,7 +20,10 @@ class WardenDashboard extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.school), text: 'Students'),
               Tab(icon: Icon(Icons.shield_outlined), text: 'Guards'),
-              Tab(icon: Icon(Icons.swap_horiz), text: 'Entry/Exit'),
+              Tab(
+  icon: Icon(Icons.assessment_outlined),
+  text: 'Reports',
+),
               Tab(icon: Icon(Icons.people_outline), text: 'Visitors'),
             ],
           ),
@@ -30,7 +33,7 @@ class WardenDashboard extends StatelessWidget {
           children: [
             StudentsTab(),
             GuardsTab(),
-            EntryExitList(),
+            RequestReports(),
             VisitorListWidget(),
           ],
         ),

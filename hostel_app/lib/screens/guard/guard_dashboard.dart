@@ -4,7 +4,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/entry_exit_list.dart';
 import '../../widgets/notifications_list.dart';
 import '../guard/log_visitor_tab.dart';
-
+import '../../widgets/request_reports.dart';
 
 class GuardDashboard extends StatelessWidget {
   const GuardDashboard({
@@ -17,7 +17,7 @@ class GuardDashboard extends StatelessWidget {
 
     return DefaultTabController(
 
-      length: 3,
+      length: 4,
 
       child: Scaffold(
 
@@ -51,6 +51,10 @@ class GuardDashboard extends StatelessWidget {
                 text:
                     'Alerts',
               ),
+              Tab(
+  icon: Icon(Icons.assessment_outlined),
+  text: 'Reports',
+),
             ],
           ),
         ),
@@ -68,6 +72,7 @@ class GuardDashboard extends StatelessWidget {
             // Guard receives student requests
             // and approves/rejects them.
             GuardEntryExitRequests(),
+            RequestReports(),
 
             // Existing visitor section
             LogVisitorTab(),

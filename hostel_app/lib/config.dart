@@ -7,4 +7,5 @@ class ApiConfig {
   //      find it with `ipconfig` (Windows) or `ifconfig` / `ip a` (Mac/Linux),
   //      and start Django with: python manage.py runserver 0.0.0.0:8000
   static const String baseUrl = 'http://127.0.0.1:8000';
+  
 }

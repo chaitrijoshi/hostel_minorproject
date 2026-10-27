@@ -1,3 +1,4 @@
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
@@ -19,6 +20,10 @@ class _StudentEntryExitRequestsState
   String type = 'EXIT';
   DateTime? returnTime;
 
+  List<String> destinationSuggestions = [];
+  bool isLoadingDestinationSuggestions = false;
+  Timer? _destinationTimer;
+
   late Future<List<EntryExitRequest>> requests;
 
   @override
@@ -29,37 +34,81 @@ class _StudentEntryExitRequestsState
 
   @override
   void dispose() {
+    _destinationTimer?.cancel();
     destination.dispose();
     super.dispose();
   }
 
-  // Future<List<EntryExitRequest>> loadRequests() async {
-  //   final data = await ApiService.get(
-  //     '/api/entry-exit/requests/my/',
-  //   );
+  void onDestinationChanged(String value) {
+    _destinationTimer?.cancel();
 
-  //   return (data as List)
-  //       .map((e) => EntryExitRequest.fromJson(e))
-  //       .toList();
-  // }
+    if (value.trim().length < 3) {
+      setState(() {
+        destinationSuggestions = [];
+        isLoadingDestinationSuggestions = false;
+      });
+      return;
+    }
 
+    _destinationTimer = Timer(
+      const Duration(milliseconds: 350),
+      () => fetchDestinationSuggestions(value.trim()),
+    );
+  }
 
-  //temporary code
+  Future<void> fetchDestinationSuggestions(String text) async {
+    if (!mounted) return;
+
+    setState(() {
+      isLoadingDestinationSuggestions = true;
+    });
+
+    try {
+      final data = await ApiService.get(
+        '/api/entry-exit/destination-suggestions/?text=${Uri.encodeQueryComponent(text)}',
+      );
+
+      if (!mounted || destination.text.trim() != text) return;
+
+      final results = (data['results'] as List? ?? [])
+          .map((item) => (item['formatted'] ?? item['name'] ?? '').toString())
+          .where((item) => item.isNotEmpty)
+          .toSet()
+          .toList();
+
+      setState(() {
+        destinationSuggestions = results;
+        isLoadingDestinationSuggestions = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        destinationSuggestions = [];
+        isLoadingDestinationSuggestions = false;
+      });
+    }
+  }
+
+  void chooseDestination(String value) {
+    destination.text = value;
+    destination.selection = TextSelection.collapsed(
+      offset: destination.text.length,
+    );
+    setState(() {
+      destinationSuggestions = [];
+      isLoadingDestinationSuggestions = false;
+    });
+  }
 
   Future<List<EntryExitRequest>> loadRequests() async {
-  final data = await ApiService.get(
-    '/api/entry-exit/requests/my/',
-  );
+    final data = await ApiService.get(
+      '/api/entry-exit/requests/my/',
+    );
 
-  debugPrint('MY REQUESTS API: $data');
-
-  return (data as List)
-      .map((e) => EntryExitRequest.fromJson(e))
-      .toList();
-}
-
-
-// --------end------------------
+    return (data as List)
+        .map((e) => EntryExitRequest.fromJson(e))
+        .toList();
+  }
 
   Future<void> selectTime() async {
     final date = await showDatePicker(
@@ -164,7 +213,10 @@ class _StudentEntryExitRequestsState
           onSelectionChanged: (value) {
             setState(() {
               type = value.first;
+              _destinationTimer?.cancel();
               destination.clear();
+              destinationSuggestions = [];
+              isLoadingDestinationSuggestions = false;
               returnTime = null;
             });
           },
@@ -173,10 +225,46 @@ class _StudentEntryExitRequestsState
         if (type == 'EXIT') ...[
           TextField(
             controller: destination,
-            decoration: const InputDecoration(
+            onChanged: onDestinationChanged,
+            decoration: InputDecoration(
               labelText: 'Destination',
+              hintText: 'Type at least 3 letters',
+              suffixIcon: isLoadingDestinationSuggestions
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           ),
+          if (destinationSuggestions.isNotEmpty)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              margin: const EdgeInsets.only(top: 4, bottom: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: destinationSuggestions.length,
+                itemBuilder: (context, index) {
+                  final suggestion = destinationSuggestions[index];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.location_on_outlined),
+                    title: Text(suggestion),
+                    onTap: () => chooseDestination(suggestion),
+                  );
+                },
+              ),
+            ),
           OutlinedButton(
             onPressed: selectTime,
             child: Text(
@@ -258,12 +346,21 @@ class _GuardEntryExitRequestsState
 
   Future<void> updateRequest(
     EntryExitRequest request,
-    String status,
-  ) async {
+    String newStatus, {
+    String rejectionReason = '',
+  }) async {
     try {
+      final data = <String, dynamic>{
+        'status': newStatus,
+      };
+
+      if (newStatus == 'REJECTED') {
+        data['rejection_reason'] = rejectionReason;
+      }
+
       await ApiService.patch(
         '/api/entry-exit/requests/${request.id}/',
-        {'status': status},
+        data,
       );
 
       if (!mounted) return;
@@ -273,7 +370,13 @@ class _GuardEntryExitRequestsState
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Request $status')),
+        SnackBar(
+          content: Text(
+            newStatus == 'REJECTED'
+                ? 'Request rejected successfully'
+                : 'Request approved successfully',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -282,6 +385,69 @@ class _GuardEntryExitRequestsState
         SnackBar(content: Text('$e')),
       );
     }
+  }
+
+  Future<void> rejectRequest(
+    EntryExitRequest request,
+  ) async {
+    final controller = TextEditingController();
+
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Reject Request'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Reason for rejection',
+              hintText: 'Enter reason',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (controller.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please enter a rejection reason',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(
+                  dialogContext,
+                  controller.text.trim(),
+                );
+              },
+              child: const Text('Reject'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (reason == null || reason.trim().isEmpty) return;
+
+    await updateRequest(
+      request,
+      'REJECTED',
+      rejectionReason: reason.trim(),
+    );
   }
 
   @override
@@ -328,10 +494,9 @@ class _GuardEntryExitRequestsState
                   subtitle: Text(
                     'Student: ${r.studentName}\n'
                     'Enrollment: ${r.enrollmentNo}\n'
-                    'Room: ${r.roomNo}\n'
                     '${r.requestType == 'EXIT'
                         ? 'Destination: ${r.destination}'
-                        : 'Entry Time: ${_formatEntryTime(r.entryTime)}'}',
+                        : 'Entry Request Time: ${_formatEntryTime(r.requestTime)}'}',
                   ),
                   trailing: Wrap(
                     spacing: 4,
@@ -340,13 +505,18 @@ class _GuardEntryExitRequestsState
                         tooltip: 'Approve',
                         onPressed: () =>
                             updateRequest(r, 'APPROVED'),
-                        icon: const Icon(Icons.check),
+                        icon: const Icon(
+                          Icons.check,
+                          color: Colors.green,
+                        ),
                       ),
                       IconButton(
                         tooltip: 'Reject',
-                        onPressed: () =>
-                            updateRequest(r, 'REJECTED'),
-                        icon: const Icon(Icons.close),
+                        onPressed: () => rejectRequest(r),
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.red,
+                        ),
                       ),
                     ],
                   ),
@@ -447,6 +617,8 @@ class RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExit = request.requestType == 'EXIT';
+    final rejectionReason =
+        request.rejectionReason ?? '';
 
     return Card(
       child: ListTile(
@@ -456,7 +628,11 @@ class RequestCard extends StatelessWidget {
           '${isExit
               ? 'Destination: ${request.destination}\n'
                 'Expected Return: ${request.expectedReturnTime == null ? "Not specified" : formatDateTime(request.expectedReturnTime!)}'
-              : 'Entry Time: ${_formatEntryTime(request.entryTime)}'}',
+              : 'Entry Time: ${_formatEntryTime(request.entryTime)}'}'
+          '${request.status == 'REJECTED' &&
+                  rejectionReason.trim().isNotEmpty
+              ? '\nRejection Reason: $rejectionReason'
+              : ''}',
         ),
         trailing: Text(request.status),
       ),

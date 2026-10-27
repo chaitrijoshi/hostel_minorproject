@@ -18,6 +18,7 @@ class EntryExit(models.Model):
         'security.SecurityGuard',
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='logs'
     )
 
@@ -54,16 +55,14 @@ class EntryExit(models.Model):
 
 class EntryExitRequest(models.Model):
 
-    REQUEST_TYPES = [
-        ('EXIT', 'Exit'),
-        ('ENTRY', 'Entry'),
-    ]
+    class RequestType(models.TextChoices):
+        EXIT = 'EXIT', 'Exit'
+        ENTRY = 'ENTRY', 'Entry'
 
-    STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('APPROVED', 'Approved'),
-        ('REJECTED', 'Rejected'),
-    ]
+    class RequestStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
 
     student = models.ForeignKey(
         'students.Student',
@@ -73,7 +72,7 @@ class EntryExitRequest(models.Model):
 
     request_type = models.CharField(
         max_length=5,
-        choices=REQUEST_TYPES
+        choices=RequestType.choices
     )
 
     destination = models.CharField(
@@ -98,8 +97,22 @@ class EntryExitRequest(models.Model):
 
     status = models.CharField(
         max_length=10,
-        choices=STATUS_CHOICES,
-        default='PENDING'
+        choices=RequestStatus.choices,
+        default=RequestStatus.PENDING
+    )
+
+    # Reason provided by the guard when rejecting a request
+    rejection_reason = models.TextField(
+        blank=True,
+        default=''
+    )
+        # Guard who approved or rejected this request
+    decided_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='decided_entry_exit_requests'
     )
 
     class Meta:

@@ -4,6 +4,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/entry_exit_list.dart';
 import '../../widgets/visitor_list.dart';
 import '../../widgets/notifications_list.dart';
+import '../../widgets/request_reports.dart';
 
 
 class StudentDashboard extends StatelessWidget {
@@ -17,7 +18,7 @@ class StudentDashboard extends StatelessWidget {
 
     return DefaultTabController(
 
-      length: 3,
+      length: 4,
 
       child: Scaffold(
 
@@ -37,6 +38,12 @@ class StudentDashboard extends StatelessWidget {
                 text:
                     'Entry / Exit',
               ),
+              Tab(
+               icon:
+                Icon(Icons.assessment_outlined),
+              text: 
+                    'Reports',
+            ),
 
               Tab(
                 icon:
@@ -74,6 +81,9 @@ class StudentDashboard extends StatelessWidget {
 
             // Notifications
             NotificationsList(),
+
+            // Request Reports
+            RequestReports(),
           ],
         ),
       ),

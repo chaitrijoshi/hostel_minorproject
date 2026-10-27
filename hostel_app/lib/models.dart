@@ -1,3 +1,4 @@
+
 class Hostel {
   final int id;
   final String name;
@@ -16,9 +17,9 @@ class Hostel {
   });
 
   factory Hostel.fromJson(Map<String, dynamic> json) => Hostel(
-        id: json['id'],
-        name: json['name'] ?? '',
-        address: json['address'] ?? '',
+        id: json['id'] ?? 0,
+        name: (json['name'] ?? '').toString(),
+        address: (json['address'] ?? '').toString(),
         wardenCount: json['warden_count'] ?? 0,
         studentCount: json['student_count'] ?? 0,
         guardCount: json['guard_count'] ?? 0,
@@ -41,10 +42,10 @@ class Warden {
   });
 
   factory Warden.fromJson(Map<String, dynamic> json) => Warden(
-        id: json['id'],
+        id: json['id'] ?? 0,
         name: (json['warden_name'] ?? '').toString(),
-        username: json['warden_username'] ?? '',
-        hostelName: json['hostel_name'] ?? '',
+        username: (json['warden_username'] ?? '').toString(),
+        hostelName: (json['hostel_name'] ?? '').toString(),
         pendingFirstLogin: json['login_active'] ?? false,
       );
 }
@@ -59,6 +60,7 @@ class Student {
   final String roomNo;
   final String phone;
   final String parentContact;
+  final bool isActive;
 
   Student({
     required this.id,
@@ -70,18 +72,20 @@ class Student {
     required this.roomNo,
     required this.phone,
     required this.parentContact,
+    this.isActive = true,
   });
 
   factory Student.fromJson(Map<String, dynamic> json) => Student(
-        id: json['id'],
+        id: json['id'] ?? 0,
         name: (json['student_name'] ?? '').toString(),
-        username: json['student_username'] ?? '',
-        hostelName: json['hostel_name'] ?? '',
+        username: (json['student_username'] ?? '').toString(),
+        hostelName: (json['hostel_name'] ?? '').toString(),
         pendingFirstLogin: json['login_active'] ?? false,
-        enrollmentNo: json['enrollment_no'] ?? '',
-        roomNo: json['room_no'] ?? '',
-        phone: json['phone'] ?? '',
-        parentContact: json['parent_contact'] ?? '',
+        enrollmentNo: (json['enrollment_no'] ?? '').toString(),
+        roomNo: (json['room_no'] ?? '').toString(),
+        phone: (json['phone'] ?? '').toString(),
+        parentContact: (json['parent_contact'] ?? '').toString(),
+        isActive: json['is_active'] != false,
       );
 }
 
@@ -103,19 +107,19 @@ class Guard {
   });
 
   factory Guard.fromJson(Map<String, dynamic> json) => Guard(
-        id: json['id'],
+        id: json['id'] ?? 0,
         name: (json['guard_name'] ?? '').toString(),
-        username: json['guard_username'] ?? '',
-        hostelName: json['hostel_name'] ?? '',
+        username: (json['guard_username'] ?? '').toString(),
+        hostelName: (json['hostel_name'] ?? '').toString(),
         pendingFirstLogin: json['login_active'] ?? false,
-        shiftTime: json['shift_time'] ?? '',
+        shiftTime: (json['shift_time'] ?? '').toString(),
       );
 }
 
 class EntryExitLog {
   final int id;
   final String studentName;
-  final String roomNo;
+
   final String? guardName;
   final String? entryTime;
   final String? exitTime;
@@ -126,7 +130,7 @@ class EntryExitLog {
   EntryExitLog({
     required this.id,
     required this.studentName,
-    required this.roomNo,
+   
     required this.guardName,
     required this.entryTime,
     required this.exitTime,
@@ -137,81 +141,62 @@ class EntryExitLog {
 
   factory EntryExitLog.fromJson(Map<String, dynamic> json) =>
       EntryExitLog(
-        id: json['id'],
+        id: json['id'] ?? 0,
         studentName: (json['student_name'] ?? '').toString(),
-        roomNo: (json['room_no'] ?? '').toString(),
         guardName: json['guard_name']?.toString(),
         entryTime: json['entry_time']?.toString(),
         exitTime: json['exit_time']?.toString(),
-        status: json['status'] ?? '',
-        remarks: json['remarks'] ?? '',
-        createdAt: json['created_at'] ?? '',
+        status: (json['status'] ?? '').toString(),
+        remarks: (json['remarks'] ?? '').toString(),
+        createdAt: (json['created_at'] ?? '').toString(),
       );
 }
-
-
-// ============================================================
-// ENTRY / EXIT REQUEST
-// ============================================================
-
 
 class EntryExitRequest {
   final int id;
   final int? student;
   final String studentName;
   final String enrollmentNo;
-  final String roomNo;
   final String requestType;
   final String destination;
   final String? expectedReturnTime;
   final String requestTime;
   final String? entryTime;
   final String status;
+  final String? rejectionReason;
 
   EntryExitRequest({
     required this.id,
     required this.student,
     required this.studentName,
     required this.enrollmentNo,
-    required this.roomNo,
     required this.requestType,
     required this.destination,
     required this.expectedReturnTime,
     required this.requestTime,
     required this.entryTime,
     required this.status,
+    this.rejectionReason,
   });
 
-  factory EntryExitRequest.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory EntryExitRequest.fromJson(Map<String, dynamic> json) {
     return EntryExitRequest(
       id: json['id'] ?? 0,
-      student: json['student'],
-      studentName:
-          (json['student_name'] ?? '').toString(),
-      enrollmentNo:
-          (json['enrollment_no'] ?? '').toString(),
-      roomNo: (json['room_no'] ?? '').toString(),
-      requestType:
-          (json['request_type'] ?? '').toString(),
-      destination:
-          (json['destination'] ?? '').toString(),
-      expectedReturnTime:
-          json['expected_return_time']?.toString(),
-      requestTime:
-          (json['request_time'] ?? '').toString(),
-      entryTime:
-          json['entry_time']?.toString(),
-      status:
-          (json['status'] ?? 'PENDING').toString(),
+      student: json['student'] is int
+          ? json['student'] as int
+          : int.tryParse('${json['student']}'),
+      studentName: (json['student_name'] ?? '').toString(),
+      enrollmentNo: (json['enrollment_no'] ?? '').toString(),
+      requestType: (json['request_type'] ?? '').toString(),
+      destination: (json['destination'] ?? '').toString(),
+      expectedReturnTime: json['expected_return_time']?.toString(),
+      requestTime: (json['request_time'] ?? '').toString(),
+      entryTime: json['entry_time']?.toString(),
+      status: (json['status'] ?? 'PENDING').toString(),
+      rejectionReason: json['rejection_reason']?.toString(),
     );
   }
 }
-
-// ============================================================
-// VISITOR LOG
-// ============================================================
 
 class VisitorLog {
   final int id;
@@ -236,24 +221,18 @@ class VisitorLog {
     required this.status,
   });
 
-  factory VisitorLog.fromJson(Map<String, dynamic> json) =>
-      VisitorLog(
-        id: json['id'],
-        name: json['name'] ?? '',
-        phone: json['phone'] ?? '',
-        purpose: json['purpose'] ?? '',
+  factory VisitorLog.fromJson(Map<String, dynamic> json) => VisitorLog(
+        id: json['id'] ?? 0,
+        name: (json['name'] ?? '').toString(),
+        phone: (json['phone'] ?? '').toString(),
+        purpose: (json['purpose'] ?? '').toString(),
         studentName: (json['student_name'] ?? '').toString(),
         guardName: json['guard_name']?.toString(),
         entryTime: json['entry_time']?.toString(),
         exitTime: json['exit_time']?.toString(),
-        status: json['status'] ?? '',
+        status: (json['status'] ?? '').toString(),
       );
 }
-
-
-// ============================================================
-// NOTIFICATION
-// ============================================================
 
 class AppNotification {
   final int id;
@@ -272,10 +251,10 @@ class AppNotification {
 
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
       AppNotification(
-        id: json['id'],
-        title: json['title'] ?? '',
-        message: json['message'] ?? '',
+        id: json['id'] ?? 0,
+        title: (json['title'] ?? '').toString(),
+        message: (json['message'] ?? '').toString(),
         isRead: json['is_read'] ?? false,
-        createdAt: json['created_at'] ?? '',
+        createdAt: (json['created_at'] ?? '').toString(),
       );
 }

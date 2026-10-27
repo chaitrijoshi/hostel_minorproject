@@ -1,3 +1,5 @@
+
+import re
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
@@ -11,25 +13,70 @@ class StudentSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     full_name = serializers.CharField(write_only=True)
 
-    student_name = serializers.CharField(source='user.get_full_name', read_only=True)
-    student_username = serializers.CharField(source='user.username', read_only=True)
-    hostel_name = serializers.CharField(source='hostel.name', read_only=True)
-    login_active = serializers.BooleanField(source='user.must_change_password', read_only=True)
+    student_name = serializers.CharField(
+        source='user.get_full_name',
+        read_only=True
+    )
+    student_username = serializers.CharField(
+        source='user.username',
+        read_only=True
+    )
+    hostel_name = serializers.CharField(
+        source='hostel.name',
+        read_only=True
+    )
+    login_active = serializers.BooleanField(
+        source='user.must_change_password',
+        read_only=True
+    )
 
     class Meta:
         model = Student
         fields = [
-            'id', 'username', 'password', 'full_name',
-            'student_name', 'student_username', 'hostel', 'hostel_name', 'login_active',
-            'enrollment_no', 'room_no', 'phone', 'parent_contact',
+            'id',
+            'username',
+            'password',
+            'full_name',
+            'student_name',
+            'student_username',
+            'hostel',
+            'hostel_name',
+            'login_active',
+            'enrollment_no',
+            'department',
+            'room_no',
+            'phone',
+            'parent_contact',
+            'is_active',
         ]
-        # hostel is set by the view (from the warden's own hostel), never from the client
-        read_only_fields = ['hostel']
+        read_only_fields = ['hostel', 'is_active']
 
     def validate_username(self, value):
+        if not re.fullmatch(r'[A-Za-z0-9]+', value):
+            raise serializers.ValidationError(
+                "Username must contain only letters and numbers."
+            )
+
         if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("That username is already taken.")
+            raise serializers.ValidationError(
+                "That username is already taken."
+            )
+
         return value
+
+    def validate_enrollment_no(self, value):
+        if not re.fullmatch(r'[0-9]{12}', value):
+            raise serializers.ValidationError(
+                "Enrollment number must contain exactly 12 digits."
+            )
+        return value
+
+    def validate_department(self, value):
+        if not value.strip():
+            raise serializers.ValidationError(
+                "Department is required."
+            )
+        return value.strip()
 
     def create(self, validated_data):
         username = validated_data.pop('username')
@@ -43,4 +90,8 @@ class StudentSerializer(serializers.ModelSerializer):
             role=User.Role.STUDENT,
             must_change_password=True,
         )
-        return Student.objects.create(user=user, **validated_data)
+
+        return Student.objects.create(
+            user=user,
+            **validated_data
+        )
